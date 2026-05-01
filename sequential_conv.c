@@ -3,7 +3,6 @@
 #include <strings.h>
 
 #include <math.h>
-#include <omp.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -95,7 +94,6 @@ void convolve_sequential(ConvArgs *a)
 {
     const long total = (long)a->width * a->height;
 
-#pragma omp parallel for
     for (long idx = 0; idx < total; ++idx)
     {
         int ox = (int)(idx % a->width);
@@ -230,7 +228,7 @@ int main(int argc, char *argv[])
         pipeline_free(&pipeline);
         return EXIT_FAILURE;
     }
-    printf(" | threads: %d | steps: %d\n", omp_get_max_threads(), pipeline.n_steps);
+    printf(" | steps: %d\n", pipeline.n_steps);
 
     double t0 = now_sec();
 
