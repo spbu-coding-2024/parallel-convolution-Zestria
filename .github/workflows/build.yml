@@ -1,0 +1,30 @@
+name: Parallel convolution CI
+
+on:
+  push:
+    branches: [ "main", "task1", "task2" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Build Sequential
+      run: make sequential_conv test_sequential_conv
+
+    - name: Run Sequential Tests
+      run: ./test_sequential_conv
+
+    - name: Conditional Parallel Build and Test
+      run: |
+        if [ -f "parallel_conv.c" ] && [ -f "test_parallel_conv.c" ]; then
+          echo "Parallel implementation detected. Compiling..."
+          make test_parallel_conv
+          ./test_parallel_conv
+        else
+          echo "Parallel implementation not found. Skipping."
+        fi
