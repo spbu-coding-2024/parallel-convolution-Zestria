@@ -1,4 +1,4 @@
-#include "conv_common.h"
+#include "sequential_conv.h"
 
 #include <strings.h>
 
@@ -180,8 +180,6 @@ int main(int argc, char *argv[])
     {
         fprintf(stderr,
                 "Usage: %s <input> <output> --filter [filter ...]\n"
-                "  strategy: pixel | row | col | tile\n"
-                "  tile_w, tile_h: only used for strategy=tile (default 64 64)\n"
                 "  filters: one or more filter applied in order\n",
                 argv[0]);
         return EXIT_FAILURE;
