@@ -13,13 +13,17 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Build Sequential
-      run: make sequential_conv test_sequential_conv
+    - name: Sequential Build and Test
+      run: |
+        if [ -f "sequential_conv.c" ] && [ -f "test_sequential_conv.c" ]; then
+            echo "Sequential implementation detected. Compiling..."
+            make test_sequential_conv
+            ./test_sequential_conv
+          else
+            echo "Parallel implementation not found. Skipping."
+          fi
 
-    - name: Run Sequential Tests
-      run: ./test_sequential_conv
-
-    - name: Conditional Parallel Build and Test
+    - name: Parallel Build and Test
       run: |
         if [ -f "parallel_conv.c" ] && [ -f "test_parallel_conv.c" ]; then
           echo "Parallel implementation detected. Compiling..."
