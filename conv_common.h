@@ -59,6 +59,10 @@ static const double k_find5_h[] = {
 static const double k_find5_v[] = {
     0, 0, -1, 0, 0, 0, 0, -1, 0, 0, 0, 0, 4, 0, 0, 0, 0, -1, 0, 0, 0, 0, -1, 0, 0,
 };
+static const double k_sharpen3[] = {-1, -1, -1, -1, 9, -1, -1, -1, -1};
+static const double k_emboss5[] = {-1, -1, -1, -1, 0, -1, -1, -1, 0, 1, -1, -1, 0,
+                                   1,  1,  -1, 0,  1, 1,  1,  0,  1, 1, 1,  1};
+static const double k_mean3[] = {1, 1, 1, 1, 1, 1, 1, 1, 1};
 
 // Filter registry
 
@@ -71,6 +75,8 @@ static const Filter g_registry[] = {
     FILTER("identity", k_identity, 3, 1.0, 0.0),    FILTER("blur3", k_blur3, 3, 1, 0),
     FILTER("blur5", k_blur5, 5, 1.0 / 13.0, 0.0),   FILTER("gaussian", k_gaussian3, 3, 1.0, 0.0),
     FILTER("motion", k_motion9, 9, 1.0 / 9.0, 0.0), FILTER("find5_h", k_find5_h, 5, 1.0, 0.0),
-    FILTER("find5_v", k_find5_v, 5, 1.0, 0.0)};
+    FILTER("find5_v", k_find5_v, 5, 1.0, 0.0),      FILTER("sharpen", k_sharpen3, 3, 1.0, 0.0),
+    FILTER("emboss", k_emboss5, 5, 1.0, 128.0),     FILTER("mean", k_mean3, 3, 1.0 / 9.0, 0.0),
+};
 
 static const int g_registry_count = (int)(sizeof g_registry / sizeof g_registry[0]);
