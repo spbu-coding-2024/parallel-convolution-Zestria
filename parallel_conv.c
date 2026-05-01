@@ -1,4 +1,11 @@
-#include "sequential_conv.h"
+#ifndef CONV_TEST_BUILD
+
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#define STB_IMAGE_IMPLEMENTATION
+
+#endif
+
+#include "conv_common.h"
 
 #include <strings.h>
 
@@ -91,7 +98,7 @@ static inline void compute_pixel(const ConvArgs *a, int ox, int oy, int c)
 
 // Strategy implementations
 
-void convolve_sequential(ConvArgs *a)
+void convolve_pixel(ConvArgs *a)
 {
     const long total = (long)a->width * a->height;
 
@@ -105,8 +112,79 @@ void convolve_sequential(ConvArgs *a)
     }
 }
 
+void convolve_row(ConvArgs *a)
+{
+#pragma omp parallel for
+    for (int oy = 0; oy < a->height; ++oy)
+    {
+        for (int ox = 0; ox < a->width; ++ox)
+        {
+            for (int c = 0; c < a->channels; ++c)
+                compute_pixel(a, ox, oy, c);
+        }
+    }
+}
+
+void convolve_col(ConvArgs *a)
+{
+#pragma omp parallel for
+    for (int ox = 0; ox < a->width; ++ox)
+    {
+        for (int oy = 0; oy < a->height; ++oy)
+        {
+            for (int c = 0; c < a->channels; ++c)
+                compute_pixel(a, ox, oy, c);
+        }
+    }
+}
+
+void convolve_tile(ConvArgs *a, int tile_w, int tile_h)
+{
+    int ntx = (a->width + tile_w - 1) / tile_w;
+    int nty = (a->height + tile_h - 1) / tile_h;
+    int total_tiles = ntx * nty;
+
+#pragma omp parallel for
+    for (int t = 0; t < total_tiles; ++t)
+    {
+        int tx = t % ntx;
+        int ty = t / ntx;
+
+        int x0 = tx * tile_w, x1 = x0 + tile_w < a->width ? x0 + tile_w : a->width;
+        int y0 = ty * tile_h, y1 = y0 + tile_h < a->height ? y0 + tile_h : a->height;
+
+        for (int oy = y0; oy < y1; ++oy)
+        {
+            for (int ox = x0; ox < x1; ++ox)
+            {
+                for (int c = 0; c < a->channels; ++c)
+                    compute_pixel(a, ox, oy, c);
+            }
+        }
+    }
+}
+
+static void run_strategy(ConvArgs *a, Strategy strategy, int tile_w, int tile_h)
+{
+    switch (strategy)
+    {
+    case STRATEGY_PIXEL :
+        convolve_pixel(a);
+        break;
+    case STRATEGY_ROW :
+        convolve_row(a);
+        break;
+    case STRATEGY_COL :
+        convolve_col(a);
+        break;
+    case STRATEGY_TILE :
+        convolve_tile(a, tile_w, tile_h);
+        break;
+    }
+}
+
 static int pipeline_run(const Pipeline *p, const stbi_uc *input, stbi_uc *output, int width,
-                        int height, int channels)
+                        int height, int channels, Strategy strategy, int tile_w, int tile_h)
 {
 
     if (p->n_steps == 0)
@@ -155,10 +233,7 @@ static int pipeline_run(const Pipeline *p, const stbi_uc *input, stbi_uc *output
             .bias = f->bias,
         };
 
-        printf("  step %d/%d: %-20s (%dx%d)\n", s + 1, p->n_steps, f->name, f->kernel_size,
-               f->kernel_size);
-
-        convolve_sequential(&args);
+        run_strategy(&args, strategy, tile_w, tile_h);
     }
 
     free(buf[0]);
@@ -179,7 +254,7 @@ int main(int argc, char *argv[])
     if (argc < 4)
     {
         fprintf(stderr,
-                "Usage: %s <input> <output> --filter [filter ...]\n"
+                "Usage: %s <input> <output> <strategy> [tile_w tile_h] --filter [filter ...]\n"
                 "  strategy: pixel | row | col | tile\n"
                 "  tile_w, tile_h: only used for strategy=tile (default 64 64)\n"
                 "  filters: one or more filter applied in order\n",
@@ -189,13 +264,40 @@ int main(int argc, char *argv[])
 
     const char *input_path = argv[1];
     const char *output_path = argv[2];
+    const char *strategy_s = argv[3];
 
+    Strategy strategy;
+    if (strcmp(strategy_s, "pixel") == 0)
+        strategy = STRATEGY_PIXEL;
+    else if (strcmp(strategy_s, "row") == 0)
+        strategy = STRATEGY_ROW;
+    else if (strcmp(strategy_s, "col") == 0)
+        strategy = STRATEGY_COL;
+    else if (strcmp(strategy_s, "tile") == 0)
+        strategy = STRATEGY_TILE;
+    else
+    {
+        fprintf(stderr, "Unknown strategy '%s'\n", strategy_s);
+        return EXIT_FAILURE;
+    }
+
+    int tile_w = 64, tile_h = 64;
     int filter_start = 4;
+
+    if (argc > filter_start + 1 && strcmp(argv[filter_start], "--filter") != 0)
+    {
+        tile_w = atoi(argv[filter_start]);
+        filter_start++;
+    }
+
+    if (argc > filter_start + 1 && strcmp(argv[filter_start], "--filter") != 0)
+    {
+        tile_h = atoi(argv[filter_start]);
+        filter_start++;
+    }
 
     if (filter_start < argc && strcmp(argv[filter_start], "--filter") == 0)
         ++filter_start;
-
-    printf("filter index: %d\n", filter_start);
 
     Pipeline pipeline = pipeline_create();
     if (filter_start >= argc)
@@ -222,7 +324,7 @@ int main(int argc, char *argv[])
         pipeline_free(&pipeline);
         return EXIT_FAILURE;
     }
-    printf("Loaded '%s': %dx%d px, %d channel(s)\n", input_path, width, height, orig_ch);
+    printf("Loaded '%s': %d×%d px, %d channel(s)\n", input_path, width, height, orig_ch);
 
     stbi_uc *output = malloc((size_t)(width * height * 4));
     if (!output)
@@ -232,11 +334,16 @@ int main(int argc, char *argv[])
         pipeline_free(&pipeline);
         return EXIT_FAILURE;
     }
+
+    printf("Strategy: %s", strategy_s);
+    if (strategy == STRATEGY_TILE)
+        printf(" (tile %dx%d)", tile_w, tile_h);
     printf(" | threads: %d | steps: %d\n", omp_get_max_threads(), pipeline.n_steps);
 
+    /* Run selected strategy, timed */
     double t0 = now_sec();
 
-    int rc = pipeline_run(&pipeline, image, output, width, height, 4);
+    int rc = pipeline_run(&pipeline, image, output, width, height, 4, strategy, tile_w, tile_h);
 
     if (rc != 0)
     {
@@ -247,9 +354,11 @@ int main(int argc, char *argv[])
     }
     printf("Pipeline complete in %.3f s\n", now_sec() - t0);
 
+    /* Preserve original alpha channel */
     for (int i = 0; i < width * height; ++i)
         output[i * 4 + 3] = image[i * 4 + 3];
 
+    /* Write output */
     if (!stbi_write_png(output_path, width, height, 4, output, width * 4))
     {
         fprintf(stderr, "Error: failed to write '%s'\n", output_path);
