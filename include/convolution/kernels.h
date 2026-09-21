@@ -1,1 +1,9 @@
+#ifndef CONVOLUTION_KERNELS_H
+#define CONVOLUTION_KERNELS_H
+
+#include "convolution.h"
+
+extern conv_kernel KERNEL_IDENTITY_3x3;
+
+#endif /* CONVOLUTION_KERNELS_H */
 
