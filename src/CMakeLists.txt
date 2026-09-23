@@ -12,3 +12,13 @@ target_include_directories(image_conv_lib
         ${CMAKE_SOURCE_DIR}/include 
 )
 
+target_link_libraries(image_conv_lib
+    PUBLIC
+        OpenMP::OpenMP_C
+)
+
+target_compile_options(image_conv_lib
+    PRIVATE
+        -Wall -Wextra
+)
+

@@ -3,8 +3,6 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <convolution/io.h>
-
 #define STB_IMAGE_IMPLEMENTATION
 #include <stb/stb_image.h>
 
@@ -63,3 +61,6 @@ conv_status conv_io_save_png(char *path, conv_image *image) {
     return ok ? CONV_OK : CONV_ERR_IO_WRITE;
 }
 
+int main(void) {
+    
+}

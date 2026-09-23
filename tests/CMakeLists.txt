@@ -10,6 +10,8 @@ target_link_libraries(test_seq_conv_lib
         image_conv_lib
 )
 
+target_compile_options(test_seq_conv_lib PRIVATE -Wall -Wextra)
+
 add_test(
     NAME test_seq_conv_lib 
     COMMAND test_seq_conv_lib
@@ -26,6 +28,8 @@ target_link_libraries(test_image
     PRIVATE
         image_conv_lib
 )
+
+target_compile_options(test_image PRIVATE -Wall -Wextra)
 
 add_test(
     NAME test_image

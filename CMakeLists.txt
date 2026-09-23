@@ -5,7 +5,10 @@ project(conv_project C)
 # .clangd
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+find_package(OpenMP REQUIRED)
+
 add_subdirectory(src)
+add_subdirectory(cli)
 
 # tests
 option(BUILD_TESTING "Enable testing and build tests" ON)
