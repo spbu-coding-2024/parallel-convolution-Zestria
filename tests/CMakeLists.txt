@@ -36,3 +36,22 @@ add_test(
     COMMAND test_image
 )
 
+add_executable(test_cli)
+
+target_sources(test_cli
+    PRIVATE
+        test_cli.c
+)
+
+target_link_libraries(test_cli
+    PRIVATE
+        image_conv_cli_io
+)
+
+target_compile_options(test_cli PRIVATE -Wall -Wextra)
+
+add_test(
+    NAME test_cli
+    COMMAND test_cli ${CMAKE_SOURCE_DIR}/assets/emmastone.png
+)
+
