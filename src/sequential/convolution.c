@@ -28,7 +28,37 @@ static conv_status validate(const conv_image *in, conv_image *out, const conv_ke
     return CONV_OK;
 }
 
-conv_status conv_apply_gray(const conv_image *in, conv_image *out, const conv_kernel *k) {
+/*
+ * Map a sample coordinate `i` outside [0, limit) onto a valid index, or return
+ * -1 for CONV_BORDER_ZERO.
+ */
+static int border_index(int i, int limit, conv_border mode) {
+    if (i >= 0 && i < limit) {
+        return i;
+    }
+
+    switch (mode) {
+    case CONV_BORDER_WRAP:
+        return (i % limit + limit) % limit;
+    case CONV_BORDER_CLAMP:
+        return i < 0 ? 0 : limit - 1;
+    case CONV_BORDER_ZERO:
+        return -1;
+    case CONV_BORDER_MIRROR:
+        if (limit == 1) {
+            return 0; /* a single row or column has nothing to reflect onto */
+        }
+        while (i < 0 || i >= limit) {
+            i = i < 0 ? -i : 2 * limit - 2 - i;
+        }
+        return i;
+    }
+
+    return -1;
+}
+
+conv_status conv_apply_gray_border(const conv_image *in, conv_image *out,
+                                   const conv_kernel *k, conv_border border) {
     conv_status st = validate(in, out, k);
     if (st != CONV_OK) {
         return st;
@@ -49,8 +79,12 @@ conv_status conv_apply_gray(const conv_image *in, conv_image *out, const conv_ke
 
         for (int ky = 0; ky < kh; ++ky) {
         for (int kx = 0; kx < kw; ++kx) {
-            int iy = (y - dy + ky + h) % h;
-            int ix = (x - dx + kx + w) % w;
+            int iy = border_index(y - dy + ky, h, border);
+            int ix = border_index(x - dx + kx, w, border);
+
+            if (iy < 0 || ix < 0) {
+                continue; /* CONV_BORDER_ZERO case */
+            }
 
             acc += in->data[iy * w + ix] * k->data[ky * kw + kx];
         }
@@ -61,5 +95,9 @@ conv_status conv_apply_gray(const conv_image *in, conv_image *out, const conv_ke
     }
 
     return CONV_OK;
+}
+
+conv_status conv_apply_gray(const conv_image *in, conv_image *out, const conv_kernel *k) {
+    return conv_apply_gray_border(in, out, k, CONV_BORDER_WRAP);
 }
 
