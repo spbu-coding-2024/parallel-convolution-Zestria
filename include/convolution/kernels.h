@@ -15,7 +15,10 @@ conv_kernel *conv_kernel_create(int width, int height);
  */
 void conv_kernel_destroy(conv_kernel *kernel);
 
-/* Preset kernels live in static, non-owned storage. */
+/*
+ * Preset kernels live in static, non-owned storage. Every preset satisfies
+ * conv_kernel_validate() and must never be passed to conv_kernel_destroy().
+ */
 extern const conv_kernel KERNEL_IDENTITY_3x3;
 
 #endif /* CONVOLUTION_KERNELS_H */

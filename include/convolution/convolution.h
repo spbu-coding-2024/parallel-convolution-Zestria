@@ -22,6 +22,16 @@ typedef struct {
     double bias;
 } conv_kernel;
 
+/*
+ * A kernel is valid when its width and height are positive and odd, so the
+ * kernel has a well-defined center, and its coefficients are not NULL.
+ *
+ * Returns CONV_ERR_NULL_ARG for a NULL kernel or NULL coefficients,
+ * CONV_ERR_INVALID_SIZE for a non-positive width or height, and
+ * CONV_ERR_KERNEL_SIZE for an even width or height; otherwise CONV_OK.
+ */
+conv_status conv_kernel_validate(const conv_kernel *kernel);
+
 typedef enum {
     CONV_BORDER_WRAP,   /* modulo: -1 -> limit-1, limit -> 0            */
     CONV_BORDER_CLAMP,  /* repeat edge: -1 -> 0, limit -> limit-1       */

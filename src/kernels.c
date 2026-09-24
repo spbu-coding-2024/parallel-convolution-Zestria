@@ -22,6 +22,11 @@ conv_kernel *conv_kernel_create(int width, int height) {
     kernel->height = height;
     kernel->factor = 1.0;
     kernel->bias = 0.0;
+
+    if (conv_kernel_validate(kernel) != CONV_OK) {
+        conv_kernel_destroy(kernel);
+        return NULL;
+    }
     return kernel;
 }
 
@@ -32,6 +37,19 @@ void conv_kernel_destroy(conv_kernel *kernel) {
 
     free(kernel->data);
     free(kernel);
+}
+
+conv_status conv_kernel_validate(const conv_kernel *kernel) {
+    if (kernel == NULL || kernel->data == NULL) {
+        return CONV_ERR_NULL_ARG;
+    }
+    if (kernel->width <= 0 || kernel->height <= 0) {
+        return CONV_ERR_INVALID_SIZE;
+    }
+    if (kernel->width % 2 == 0 || kernel->height % 2 == 0) {
+        return CONV_ERR_KERNEL_SIZE;
+    }
+    return CONV_OK;
 }
 
 static double KERNEL_IDENTITY_3x3_DATA[9] = {

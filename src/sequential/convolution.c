@@ -13,13 +13,19 @@ static uint8_t clamp_u8(double v) {
 }
 
 static conv_status validate(const conv_image *in, conv_image *out, const conv_kernel *k) {
-    if (in == NULL || k == NULL || out == NULL || in->data == NULL || out->data == NULL || k -> data == NULL) {
+    if (in == NULL || out == NULL || in->data == NULL || out->data == NULL) {
         return CONV_ERR_NULL_ARG;
     }
     if (in->width <= 0 || in->height <= 0 || out->width != in->width || out->height != in->height) {
         return CONV_ERR_INVALID_SIZE;
     }
-    if (k->width <= 0 || k->height <= 0 || k->width % 2 == 0 || k->height % 2 == 0 || k->width > in->width || k->height > in->height) {
+
+    conv_status kernel_status = conv_kernel_validate(k);
+    if (kernel_status != CONV_OK) {
+        return kernel_status;
+    }
+
+    if (k->width > in->width || k->height > in->height) {
         return CONV_ERR_KERNEL_SIZE;
     }
     if (in->data == out->data) {
