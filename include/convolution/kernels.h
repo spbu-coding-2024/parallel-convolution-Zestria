@@ -3,7 +3,7 @@
 
 #include <convolution/convolution.h>
 
-extern conv_kernel KERNEL_IDENTITY_3x3;
+extern const conv_kernel KERNEL_IDENTITY_3x3;
 
 #endif /* CONVOLUTION_KERNELS_H */
 

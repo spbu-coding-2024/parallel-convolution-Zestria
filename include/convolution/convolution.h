@@ -22,7 +22,13 @@ typedef struct {
     double bias;
 } conv_kernel;
 
-conv_status conv_apply_gray(conv_image *in, conv_image *out, conv_kernel *k);
+/*
+ * Correlate `in` with `k` and write the result to `out` using wrap around strategy.
+ *
+ * In-place application is rejected (CONV_ERR_INVALID_PARAM): `in` and `out`
+ * must use different pixel buffers.
+ */
+conv_status conv_apply_gray(const conv_image *in, conv_image *out, const conv_kernel *k);
 
 #endif /* CONVOLUTION_CONVOLUTION_H */
 

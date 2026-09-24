@@ -12,7 +12,7 @@ static uint8_t clamp_u8(double v) {
     return (uint8_t)v;
 }
 
-static conv_status validate(conv_image *in, conv_image *out, conv_kernel *k) {
+static conv_status validate(const conv_image *in, conv_image *out, const conv_kernel *k) {
     if (in == NULL || k == NULL || out == NULL || in->data == NULL || out->data == NULL || k -> data == NULL) {
         return CONV_ERR_NULL_ARG;
     }
@@ -28,7 +28,7 @@ static conv_status validate(conv_image *in, conv_image *out, conv_kernel *k) {
     return CONV_OK;
 }
 
-conv_status conv_apply_gray(conv_image *in, conv_image *out, conv_kernel *k) {
+conv_status conv_apply_gray(const conv_image *in, conv_image *out, const conv_kernel *k) {
     conv_status st = validate(in, out, k);
     if (st != CONV_OK) {
         return st;
