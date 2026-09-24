@@ -36,6 +36,25 @@ add_test(
     COMMAND test_image
 )
 
+add_executable(test_kernel)
+
+target_sources(test_kernel
+    PRIVATE
+        test_kernel.c
+)
+
+target_link_libraries(test_kernel
+    PRIVATE
+        image_conv_lib
+)
+
+target_compile_options(test_kernel PRIVATE -Wall -Wextra)
+
+add_test(
+    NAME test_kernel
+    COMMAND test_kernel
+)
+
 add_executable(test_cli)
 
 target_sources(test_cli
