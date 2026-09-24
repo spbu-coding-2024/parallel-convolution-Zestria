@@ -59,8 +59,8 @@ static void test_kernel_dimensions(void) {
 
     CHECK(conv_apply_gray(&in, &out, &even_square) == CONV_ERR_KERNEL_SIZE);
     CHECK(conv_apply_gray(&in, &out, &even_height) == CONV_ERR_KERNEL_SIZE);
-    CHECK(conv_apply_gray(&in, &out, &zero_width) == CONV_ERR_KERNEL_SIZE);
-    CHECK(conv_apply_gray(&in, &out, &negative_height) == CONV_ERR_KERNEL_SIZE);
+    CHECK(conv_apply_gray(&in, &out, &zero_width) == CONV_ERR_INVALID_SIZE);
+    CHECK(conv_apply_gray(&in, &out, &negative_height) == CONV_ERR_INVALID_SIZE);
 }
 
 static void test_kernel_larger_than_image(void) {
@@ -71,6 +71,18 @@ static void test_kernel_larger_than_image(void) {
     double coefficients[25] = {0};
     conv_kernel k = {5, 5, coefficients, 1.0, 0.0};
 
+    CHECK(conv_apply_gray(&in, &out, &k) == CONV_ERR_KERNEL_SIZE);
+}
+
+static void test_even_kernel_rejected(void) {
+    uint8_t in_data[9] = {1,2,3,4,5,6,7,8,9};
+    uint8_t out_data[9] = {0};
+    conv_image in = {3, 3, in_data};
+    conv_image out = {3, 3, out_data};
+    double coefficients[6] = {0};
+    conv_kernel k = {3, 2, coefficients, 1.0, 0.0};
+
+    /* The entry point must use the shared validator, not its own copy of the rule. */
     CHECK(conv_apply_gray(&in, &out, &k) == CONV_ERR_KERNEL_SIZE);
 }
 
@@ -271,6 +283,7 @@ int main(void) {
     test_in_place_rejected();
     test_kernel_dimensions();
     test_kernel_larger_than_image();
+    test_even_kernel_rejected();
     test_identity_preserves_pixels();
     test_zero_kernel();
     test_factor_and_bias();
