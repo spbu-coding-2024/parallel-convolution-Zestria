@@ -20,6 +20,20 @@ void conv_kernel_destroy(conv_kernel *kernel);
  * conv_kernel_validate() and must never be passed to conv_kernel_destroy().
  */
 extern const conv_kernel KERNEL_IDENTITY_3x3;
+extern const conv_kernel KERNEL_BLUR_3x3;
+extern const conv_kernel KERNEL_BLUR_5x5;
+extern const conv_kernel KERNEL_GAUSSIAN_BLUR_3x3;
+extern const conv_kernel KERNEL_MOTION_BLUR_9x9;
+extern const conv_kernel KERNEL_FIND_HORIZONTAL_EDGES_5x5;
+extern const conv_kernel KERNEL_FIND_VERTICAL_EDGES_5x5;
+extern const conv_kernel KERNEL_FIND_DIAGONAL_EDGES_5x5;
+extern const conv_kernel KERNEL_FIND_ALL_EDGES_3x3;
+extern const conv_kernel KERNEL_SHARPEN_3x3;
+extern const conv_kernel KERNEL_SHARPEN_5x5;
+extern const conv_kernel KERNEL_SHARPEN_EXCESSIVELY_3x3;
+extern const conv_kernel KERNEL_EMBOSS_3x3;
+extern const conv_kernel KERNEL_EMBOSS_5x5;
+extern const conv_kernel KERNEL_MEAN_3x3;
 
 #endif /* CONVOLUTION_KERNELS_H */
 
