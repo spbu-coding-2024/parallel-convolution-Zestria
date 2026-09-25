@@ -82,7 +82,6 @@ static void test_even_kernel_rejected(void) {
     double coefficients[6] = {0};
     conv_kernel k = {3, 2, coefficients, 1.0, 0.0};
 
-    /* The entry point must use the shared validator, not its own copy of the rule. */
     CHECK(conv_apply_gray(&in, &out, &k) == CONV_ERR_KERNEL_SIZE);
 }
 
@@ -260,8 +259,6 @@ static void test_degenerate_sizes(void) {
     conv_image out_small = {2, 2, out_2x2};
 
     for (int m = 0; m < 4; ++m) {
-        /* A 3x3 kernel is wider or taller than these images, so the shared
-           "kernel larger than image" rule rejects every border mode. */
         CHECK(conv_apply_gray_border(&in_thin_w, &out_thin_w, &k, modes[m]) == CONV_ERR_KERNEL_SIZE);
         CHECK(conv_apply_gray_border(&in_thin_h, &out_thin_h, &k, modes[m]) == CONV_ERR_KERNEL_SIZE);
         CHECK(conv_apply_gray_border(&in_small, &out_small, &k, modes[m]) == CONV_ERR_KERNEL_SIZE);

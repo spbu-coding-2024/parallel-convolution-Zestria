@@ -68,6 +68,39 @@ static void test_destroy_null_is_safe(void) {
     CHECK(1);
 }
 
+static const conv_kernel *const PRESETS[] = {
+    &KERNEL_IDENTITY_3x3,
+    &KERNEL_BLUR_3x3,
+    &KERNEL_BLUR_5x5,
+    &KERNEL_GAUSSIAN_BLUR_3x3,
+    &KERNEL_MOTION_BLUR_9x9,
+    &KERNEL_FIND_HORIZONTAL_EDGES_5x5,
+    &KERNEL_FIND_VERTICAL_EDGES_5x5,
+    &KERNEL_FIND_DIAGONAL_EDGES_5x5,
+    &KERNEL_FIND_ALL_EDGES_3x3,
+    &KERNEL_SHARPEN_3x3,
+    &KERNEL_SHARPEN_5x5,
+    &KERNEL_SHARPEN_EXCESSIVELY_3x3,
+    &KERNEL_EMBOSS_3x3,
+    &KERNEL_EMBOSS_5x5,
+    &KERNEL_MEAN_3x3
+};
+
+#define PRESET_COUNT (sizeof(PRESETS) / sizeof(PRESETS[0]))
+
+static void test_presets_are_valid(void) {
+    for (size_t i = 0; i < PRESET_COUNT; ++i) {
+        const conv_kernel *k = PRESETS[i];
+
+        /* The shared rule: positive odd width/height and non-NULL coefficients. */
+        CHECK(conv_kernel_validate(k) == CONV_OK);
+        CHECK(k->width == k->height); /* every preset is square */
+        CHECK(k->width >= 3);
+        CHECK(k->factor > 0.0);
+        CHECK(k->bias >= 0.0 && k->bias <= 255.0);
+    }
+}
+
 int main(void) {
     test_create_shape_and_defaults();
     test_create_invalid_dimensions();
@@ -75,5 +108,6 @@ int main(void) {
     test_validate_even_sizes();
     test_validate_null_and_degenerate();
     test_destroy_null_is_safe();
+    test_presets_are_valid();
     TEST_REPORT("test_kernel");
 }
