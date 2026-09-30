@@ -52,6 +52,75 @@ conv_status conv_kernel_validate(const conv_kernel *kernel) {
     return CONV_OK;
 }
 
+conv_kernel *conv_kernel_pad(const conv_kernel *kernel, int width, int height) {
+    if (conv_kernel_validate(kernel) != CONV_OK) {
+        return NULL;
+    }
+    if (width % 2 == 0 || height % 2 == 0) {
+        return NULL;
+    }
+    if (width < kernel->width || height < kernel->height) {
+        return NULL;
+    }
+
+    conv_kernel *padded = conv_kernel_create(width, height);
+    if (padded == NULL) {
+        return NULL;
+    }
+
+    int ox = (width - kernel->width) / 2;
+    int oy = (height - kernel->height) / 2;
+
+    for (int y = 0; y < kernel->height; ++y) {
+        for (int x = 0; x < kernel->width; ++x) {
+            padded->data[(y + oy) * width + (x + ox)] = kernel->data[y * kernel->width + x];
+        }
+    }
+
+    padded->factor = kernel->factor;
+    padded->bias = kernel->bias;
+
+    return padded;
+}
+
+conv_kernel *conv_kernel_compose(const conv_kernel *first, const conv_kernel *second) {
+    if (conv_kernel_validate(first) != CONV_OK) {
+        return NULL;
+    }
+    if (conv_kernel_validate(second) != CONV_OK) {
+        return NULL;
+    }
+
+    int width = first->width + second->width - 1;
+    int height = first->height + second->height - 1;
+
+    conv_kernel *composed = conv_kernel_create(width, height);
+    if (composed == NULL) {
+        return NULL;
+    }
+
+    for (int iy = 0; iy < first->height; ++iy) {
+        for (int ix = 0; ix < first->width; ++ix) {
+            for (int jy = 0; jy < second->height; ++jy) {
+                for (int jx = 0; jx < second->width; ++jx) {
+                    composed->data[(iy + jy) * width + (ix + jx)] +=
+                        first->data[iy * first->width + ix] * second->data[jy * second->width + jx];
+                }
+            }
+        }
+    }
+
+    double second_sum = 0.0;
+    for (int i = 0; i < second->width * second->height; ++i) {
+        second_sum += second->data[i];
+    }
+
+    composed->factor = first->factor * second->factor;
+    composed->bias = second->factor * first->bias * second_sum + second->bias;
+
+    return composed;
+}
+
 static double KERNEL_IDENTITY_3x3_DATA[9] = {
     0, 0, 0,
     0, 1, 0,

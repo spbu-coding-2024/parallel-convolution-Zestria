@@ -34,10 +34,6 @@ static conv_status validate(const conv_image *in, conv_image *out, const conv_ke
     return CONV_OK;
 }
 
-/*
- * Map a sample coordinate `i` outside [0, limit) onto a valid index, or return
- * -1 for CONV_BORDER_ZERO.
- */
 static int border_index(int i, int limit, conv_border mode) {
     if (i >= 0 && i < limit) {
         return i;
@@ -105,5 +101,48 @@ conv_status conv_apply_gray_border(const conv_image *in, conv_image *out,
 
 conv_status conv_apply_gray(const conv_image *in, conv_image *out, const conv_kernel *k) {
     return conv_apply_gray_border(in, out, k, CONV_BORDER_WRAP);
+}
+
+conv_status conv_apply_gray_chain(const conv_image *in, conv_image *out,
+                                  const conv_kernel *const *kernels, int count,
+                                  conv_border border) {
+    if (kernels == NULL) {
+        return CONV_ERR_NULL_ARG;
+    }
+    if (count < 1) {
+        return CONV_ERR_INVALID_PARAM;
+    }
+
+    if (count == 1) {
+        return conv_apply_gray_border(in, out, kernels[0], border);
+    }
+
+    if (in == NULL || out == NULL || in->data == NULL || out->data == NULL) {
+        return CONV_ERR_NULL_ARG;
+    }
+    if (in->data == out->data) {
+        return CONV_ERR_INVALID_PARAM;
+    }
+
+    conv_image *scratch = conv_image_create(out->width, out->height);
+    if (scratch == NULL) {
+        return CONV_ERR_ALLOC_FAIL;
+    }
+
+    const conv_image *src = in;
+    conv_image *dst = (count % 2 == 0) ? scratch : out;
+
+    for (int i = 0; i < count; ++i) {
+        conv_status st = conv_apply_gray_border(src, dst, kernels[i], border);
+        if (st != CONV_OK) {
+            conv_image_destroy(scratch);
+            return st;
+        }
+        src = dst;
+        dst = (dst == out) ? scratch : out;
+    }
+
+    conv_image_destroy(scratch);
+    return CONV_OK;
 }
 

@@ -56,5 +56,17 @@ conv_status conv_apply_gray_border(const conv_image *in, conv_image *out,
  */
 conv_status conv_apply_gray(const conv_image *in, conv_image *out, const conv_kernel *k);
 
+/*
+ * Apply `kernels[0]` .. `kernels[count - 1]` to `in` from left to right and
+ * write the final result to `out`.
+ *
+ * `count` must be at least 1 and `kernels` must hold `count` valid kernels.
+ * In-place application is rejected (CONV_ERR_INVALID_PARAM): `in` and `out`
+ * must use different pixel buffers.
+ */
+conv_status conv_apply_gray_chain(const conv_image *in, conv_image *out,
+                                  const conv_kernel *const *kernels, int count,
+                                  conv_border border);
+
 #endif /* CONVOLUTION_CONVOLUTION_H */
 

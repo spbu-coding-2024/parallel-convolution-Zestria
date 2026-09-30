@@ -16,6 +16,17 @@ conv_kernel *conv_kernel_create(int width, int height);
 void conv_kernel_destroy(conv_kernel *kernel);
 
 /*
+ * Return a new kernel padded to `width` x `height`.
+ */
+conv_kernel *conv_kernel_pad(const conv_kernel *kernel, int width, int height);
+
+/*
+ * Return a new kernel that applies `first` and then `second` in one pass.
+ * Return NULL for invalid input
+ */
+conv_kernel *conv_kernel_compose(const conv_kernel *first, const conv_kernel *second);
+
+/*
  * Preset kernels live in static, non-owned storage. Every preset satisfies
  * conv_kernel_validate() and must never be passed to conv_kernel_destroy().
  */
