@@ -100,4 +100,3 @@ int main(int argc, char *argv[])
     test_roundtrip_preserves_pixels();
     TEST_REPORT("test_cli");
 }
-

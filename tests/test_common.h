@@ -24,4 +24,3 @@ static int checks = 0;
     } while (0)
 
 #endif /* TEST_COMMON_H */
-

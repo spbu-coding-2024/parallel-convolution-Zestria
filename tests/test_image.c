@@ -51,4 +51,3 @@ int main(void)
     TEST_REPORT("test_image");
     return failures == 0 ? 0 : 1; 
 }
-

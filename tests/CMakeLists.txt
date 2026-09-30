@@ -55,6 +55,25 @@ add_test(
     COMMAND test_kernel
 )
 
+add_executable(test_composition)
+
+target_sources(test_composition
+    PRIVATE
+        sequential/test_composition.c
+)
+
+target_link_libraries(test_composition
+    PRIVATE
+        image_conv_lib
+)
+
+target_compile_options(test_composition PRIVATE -Wall -Wextra)
+
+add_test(
+    NAME test_composition
+    COMMAND test_composition
+)
+
 add_executable(test_cli)
 
 target_sources(test_cli
@@ -73,4 +92,3 @@ add_test(
     NAME test_cli
     COMMAND test_cli ${CMAKE_SOURCE_DIR}/assets/emmastone.png
 )
-
