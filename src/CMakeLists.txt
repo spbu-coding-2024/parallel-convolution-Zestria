@@ -3,6 +3,7 @@ add_library(image_conv_lib)
 target_sources(image_conv_lib
     PRIVATE
         sequential/convolution.c
+        parallel/convolution.c
         image.c
         kernels.c
 )

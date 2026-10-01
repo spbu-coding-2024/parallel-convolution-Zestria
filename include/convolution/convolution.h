@@ -68,5 +68,39 @@ conv_status conv_apply_gray_chain(const conv_image *in, conv_image *out,
                                   const conv_kernel *const *kernels, int count,
                                   conv_border border);
 
+typedef enum {
+    CONV_PART_PIXEL,
+    CONV_PART_ROW,
+    CONV_PART_COLUMN,
+    CONV_PART_TILE,
+} conv_partition;
+
+typedef enum {
+    CONV_SCHED_STATIC,
+    CONV_SCHED_DYNAMIC,
+    CONV_SCHED_GUIDED,
+    CONV_SCHED_RUNTIME,
+} conv_omp_schedule;
+
+typedef struct {
+    int threads;
+    conv_partition partition;
+    conv_omp_schedule schedule;
+    int chunk;
+    int tile_w;
+    int tile_h;
+} conv_parallel_opts;
+
+/*
+ * Parallel correlate `in` with `k` into `out`, byte-for-byte identical to
+ * conv_apply_gray_border() for the same border mode.
+ *
+ * In-place application is rejected (CONV_ERR_INVALID_PARAM): `in` and `out`
+ * must use different pixel buffers.
+ */
+conv_status conv_apply_gray_parallel(const conv_image *in, conv_image *out,
+                                     const conv_kernel *k, conv_border border,
+                                     const conv_parallel_opts *opts);
+
 #endif /* CONVOLUTION_CONVOLUTION_H */
 
