@@ -92,3 +92,22 @@ add_test(
     NAME test_cli
     COMMAND test_cli ${CMAKE_SOURCE_DIR}/assets/emmastone.png
 )
+
+add_executable(test_parallel)
+
+target_sources(test_parallel
+    PRIVATE
+        parallel/test_parallel.c
+)
+
+target_link_libraries(test_parallel
+    PRIVATE
+        image_conv_lib
+)
+
+target_compile_options(test_parallel PRIVATE -Wall -Wextra)
+
+add_test(
+    NAME test_parallel
+    COMMAND test_parallel
+)

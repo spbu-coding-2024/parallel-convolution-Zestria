@@ -12,13 +12,6 @@ static const conv_border borders[] = {
     CONV_BORDER_ZERO, CONV_BORDER_MIRROR
 };
 
-static void fill_test_image(conv_image *image) {
-    for (int y = 0; y < image->height; ++y)
-        for (int x = 0; x < image->width; ++x)
-            image->data[y * image->width + x] =
-                (uint8_t)(20 + ((x * 7 + y * 11) % 20));
-}
-
 static conv_kernel *make_shift(int dx, int dy) {
     conv_kernel *k = conv_kernel_create(3, 3);
     if (k != NULL)
@@ -38,7 +31,7 @@ static void test_compose_identity_shift(void) {
     CHECK(right != NULL && left != NULL && both != NULL);
     
     if (right != NULL && left != NULL && both != NULL) {
-        fill_test_image(&in);
+        fill_gradient(&in);
         CHECK(both->width == 5 && both->height == 5);
         CHECK(conv_apply_gray_border(&in, &tmp, right, CONV_BORDER_WRAP) == CONV_OK);
         CHECK(conv_apply_gray_border(&tmp, &out, left, CONV_BORDER_WRAP) == CONV_OK);
@@ -59,7 +52,7 @@ static void test_identity_and_zero(void) {
     double zero_data[9] = {0};
     conv_kernel zero = {3, 3, zero_data, 1.0, 0.0};
 
-    fill_test_image(&in);
+    fill_gradient(&in);
     
     for (size_t b = 0; b < sizeof(borders) / sizeof(borders[0]); ++b) {
         CHECK(conv_apply_gray_border(&in, &out, &KERNEL_IDENTITY_3x3, borders[b]) == CONV_OK);
@@ -80,7 +73,7 @@ static void test_padding(void) {
     CHECK(wide != NULL);
     
     if (wide != NULL) {
-        fill_test_image(&in);
+        fill_gradient(&in);
         for (size_t i = 0; i < sizeof(borders) / sizeof(borders[0]); ++i) {
             CHECK(conv_apply_gray_border(&in, &a, &KERNEL_BLUR_3x3, borders[i]) == CONV_OK);
             CHECK(conv_apply_gray_border(&in, &b, wide, borders[i]) == CONV_OK);
