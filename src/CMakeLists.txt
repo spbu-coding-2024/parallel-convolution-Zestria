@@ -4,6 +4,7 @@ target_sources(image_conv_lib
     PRIVATE
         sequential/convolution.c
         parallel/convolution.c
+        pipeline.c
         image.c
         kernels.c
 )

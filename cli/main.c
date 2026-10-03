@@ -5,6 +5,7 @@
 #include <convolution/convolution.h>
 #include <convolution/image.h>
 #include <convolution/kernels.h>
+#include <convolution/pipeline.h>
 
 #include "io.h"
 
@@ -61,6 +62,11 @@ static void print_usage(const char *program) {
     fprintf(stderr,
             "usage: %s [--kernel <name>] [--partition <name>] [--threads <n>] "
             "[--schedule <name>] <input.png> <output.png>\n",
+            program);
+    fprintf(stderr,
+            "       %s [--kernel <name>] [--partition <name>] [--threads <n>] "
+            "[--schedule <name>] [--window <n>] --pipeline <in> <out> <count>\n"
+            "       (pipeline patterns expand one %%d to the image index)\n",
             program);
     fprintf(stderr, "kernels:");
     for (size_t i = 0; i < KERNEL_COUNT; ++i) {
@@ -149,13 +155,89 @@ static int run(const char *input_path, const char *output_path, const conv_kerne
     return 0;
 }
 
+typedef struct {
+    const char *in_pattern;
+    const char *out_pattern;
+} pipeline_paths;
+
+static conv_status pipeline_read(void *ctx, int index, conv_image *in) {
+    const pipeline_paths *paths = ctx;
+    char path[1024];
+    snprintf(path, sizeof(path), paths->in_pattern, index);
+
+    conv_image *loaded = NULL;
+    conv_status st = conv_io_load_png(path, &loaded);
+    if (st != CONV_OK) {
+        return st;
+    }
+    if (loaded->width != in->width || loaded->height != in->height) {
+        conv_image_destroy(loaded);
+        return CONV_ERR_INVALID_SIZE;
+    }
+
+    memcpy(in->data, loaded->data, (size_t)in->width * (size_t)in->height);
+    conv_image_destroy(loaded);
+    return CONV_OK;
+}
+
+static conv_status pipeline_write(void *ctx, int index, const conv_image *out) {
+    const pipeline_paths *paths = ctx;
+    char path[1024];
+    snprintf(path, sizeof(path), paths->out_pattern, index);
+    return conv_io_save_png(path, (conv_image *)out);
+}
+
+static int run_pipeline(const char *in_pattern, const char *out_pattern, int count, int window,
+                        const conv_kernel *kernel, const conv_parallel_opts *parallel) {
+    char path[1024];
+    snprintf(path, sizeof(path), in_pattern, 0);
+
+    conv_image *first = NULL;
+    conv_status st = conv_io_load_png(path, &first);
+    if (st != CONV_OK) {
+        fprintf(stderr, "error: cannot load '%s' (status %d)\n", path, (int)st);
+        return 1;
+    }
+
+    pipeline_paths paths = { in_pattern, out_pattern };
+    conv_pipeline_opts opts = {
+        first->width, first->height, window,
+        parallel ? parallel->threads : 0,
+        kernel, CONV_BORDER_WRAP, parallel
+    };
+    conv_image_destroy(first);
+
+    st = conv_pipeline_run(count, &opts, pipeline_read, pipeline_write, &paths);
+    if (st != CONV_OK) {
+        fprintf(stderr, "error: pipeline failed (status %d)\n", (int)st);
+        return 1;
+    }
+    return 0;
+}
+
 int main(int argc, char *argv[]) {
     const conv_kernel *kernel = &KERNEL_IDENTITY_3x3;
     conv_parallel_opts opts = { 0, CONV_PART_PIXEL, CONV_SCHED_STATIC, 0, 0, 0 };
     int parallel = 0;
+    int window = 4;
+    const char *in_pattern = NULL;
+    const char *out_pattern = NULL;
+    int count = 0;
     int i = 1;
 
     while (i < argc && strncmp(argv[i], "--", 2) == 0) {
+        if (strcmp(argv[i], "--pipeline") == 0) {
+            if (i + 3 >= argc) {
+                print_usage(argv[0]);
+                return 1;
+            }
+            in_pattern = argv[i + 1];
+            out_pattern = argv[i + 2];
+            count = atoi(argv[i + 3]);
+            i += 4;
+            continue;
+        }
+
         if (i + 1 >= argc) {
             print_usage(argv[0]);
             return 1;
@@ -184,12 +266,23 @@ int main(int argc, char *argv[]) {
                 print_usage(argv[0]);
                 return 1;
             }
+        } else if (strcmp(argv[i], "--window") == 0) {
+            window = atoi(value);
         } else {
             print_usage(argv[0]);
             return 1;
         }
 
         i += 2;
+    }
+
+    if (in_pattern != NULL) {
+        if (argc - i != 0) {
+            print_usage(argv[0]);
+            return 1;
+        }
+        return run_pipeline(in_pattern, out_pattern, count, window, kernel,
+                            parallel ? &opts : NULL);
     }
 
     if (argc - i != 2) {
