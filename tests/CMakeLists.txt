@@ -111,3 +111,22 @@ add_test(
     NAME test_parallel
     COMMAND test_parallel
 )
+
+add_executable(test_pipeline)
+
+target_sources(test_pipeline
+    PRIVATE
+        parallel/test_pipeline.c
+)
+
+target_link_libraries(test_pipeline
+    PRIVATE
+        image_conv_lib
+)
+
+target_compile_options(test_pipeline PRIVATE -Wall -Wextra)
+
+add_test(
+    NAME test_pipeline
+    COMMAND test_pipeline
+)
